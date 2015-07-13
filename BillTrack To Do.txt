@@ -1,0 +1,34 @@
+To Do:
+
+Overall Appearance
+Make Better Class Structure
+	-Perhaps Jdialogs - views or inputs
+
+Add Event from File Menu
+	-requires new JDialog similar to old ones
+
+Remove Event from File Menu
+	-requires new JDialog, bit different, deleting from database
+
+Change Top Cases on View Menu
+	-fairly easy, similar JDialogs
+
+Add Row on View Menu
+	-Tricky have to edit main appearance, fix old code to be resizeable
+
+Create Bill on Billing Menu
+	-Hard, look into docx or pdf generation on Java
+
+View Calendar on Billing Menu
+	-Hard research best ways to visualize
+
+Pausing events and returning to them
+	-Hard, for if a phone call comes in, or if you want to pause what you're doing
+
+Phone Call initiators
+	-Tricky, must investigate phone
+
+Multi User Structure, can communicate over network
+	-fucking hard, threadsafe, network comm, security???
+
+
