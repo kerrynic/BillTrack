@@ -65,7 +65,8 @@ public class BillTrackUI extends JFrame {
     private JMenuItem changeTopCases; 
     private JMenuItem addRowEvent;
     private JMenuItem viewSheet;
-    private JMenuItem viewBill;
+    private JMenuItem createBill;
+    private JMenuItem viewCalendar;
     private static Connection con;
     private static PreparedStatement pst;
     private static ResultSet rs;
@@ -272,35 +273,6 @@ public class BillTrackUI extends JFrame {
                     .addComponent(topCases.get(19))
         );
         
-     
-        
-        /*Group tLH = null;
-        for (int i =0; i<5; i++) {
-            tLH = topLayout.createSequentialGroup().addComponent(topCases.get(placeTop));
-            placeTop++;
-        }
-        topLayout.setHorizontalGroup(tLH);
-        Group tLV = null;
-        for (int i =0; i<5; i++) {
-            tLV = topLayout.createParallelGroup().addComponent(topCases.get(placeTop));
-        }
-        topLayout.setVerticalGroup(tLV);
-        
-        //the grouplayout of the middle line where guesses are input
-        middleLayout.setAutoCreateGaps(true);
-        middleLayout.setAutoCreateContainerGaps(true);
-        Group mLH = null;
-        for (int i =0; i<5; i++) {
-            mLH = middleLayout.createSequentialGroup().addComponent(secondTopCases.get(placeSec));
-            placeSec++;
-        }
-        middleLayout.setHorizontalGroup(mLH);
-        Group mLV = null;
-        for (int i =0; i<5; i++) {
-            mLV = middleLayout.createParallelGroup().addComponent(secondTopCases.get(placeSec));
-        }
-        middleLayout.setVerticalGroup(mLV);*/
-        
         bottomLayout.setAutoCreateGaps(true);
         bottomLayout.setAutoCreateContainerGaps(true);
         bottomLayout.setHorizontalGroup(
@@ -337,7 +309,8 @@ public class BillTrackUI extends JFrame {
         
         viewSheet = new JMenuItem("View Sheet");
         addActionListenerToViewSheetMenu();
-        viewBill = new JMenuItem("View Bill"); 
+        createBill = new JMenuItem("Create Bill");
+        viewCalendar = new JMenuItem("View Calendar");
 
         menuBar.add(fileMenu);
         menuBar.add(viewMenu);
@@ -351,7 +324,8 @@ public class BillTrackUI extends JFrame {
         viewMenu.add(changeTopCases);
         viewMenu.add(addRowEvent);
         billingMenu.add(viewSheet);
-        billingMenu.add(viewBill);
+        billingMenu.add(createBill);
+        billingMenu.add(viewCalendar);
         
         //Pack the components and general organization of gui
         pack();
@@ -500,21 +474,76 @@ public class BillTrackUI extends JFrame {
     public void addActionListenerToViewSheetMenu() {
         viewSheet.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String[] blahs = new String[numAllCases];
-                for (int i=0; i<numAllCases; i++) {
-                    blahs[i] = caseNamesAndIDs[i].x;
-                }
-                SheetSelectorUI sheetSelectorUI = new SheetSelectorUI(main, "Spreadsheet Selection", blahs);
-                if (!sheetSelectorUI.getCancelFlag()) {
-                    sheetCase = sheetSelectorUI.getCaseResponse();
-                    sheetStart = sheetSelectorUI.getFirstDate();
-                    sheetEnd = sheetSelectorUI.getFirstDate();
-                    
-                    //System.out.println(currentStartTime);
-                    //InputUI inputUI = new InputUI(main, "Input Case Event", lastSplitFirst[0], lastSplitFirst[1], currentEventTime);
-                    //if (!inputUI.getCancelFlag()) {
-                    //    makeDatabaseEntry(caseid, currentStartTime, currentEventTime, inputUI.getCategoryResponse(), inputUI.getDescriptionResponse());
-                    //}
+                try {
+                    String[] blahs = new String[numAllCases];
+                    for (int i=0; i<numAllCases; i++) {
+                        blahs[i] = caseNamesAndIDs[i].x;
+                    }
+                    SheetSelectorUI sheetSelectorUI = new SheetSelectorUI(main, "Spreadsheet Selection", blahs);
+                    if (!sheetSelectorUI.getCancelFlag()) {
+                        sheetCase = sheetSelectorUI.getCaseResponse();
+                        sheetStart = sheetSelectorUI.getFirstDate();
+                        sheetEnd = sheetSelectorUI.getLastDate();
+                        //System.out.println("Sheet Start: " + sheetStart);
+                        //System.out.println("Sheet End: " + sheetEnd);
+                        int case_id = numAllCases+1;
+                        for (int i = 0; i<numAllCases; i++) {
+                            if (caseNamesAndIDs[i].x == sheetCase){
+                                case_id = caseNamesAndIDs[i].y;
+                            }  
+                        }
+                        con = DriverManager.getConnection(url, user, password);
+                        pst = con.prepareStatement("SELECT SUM(CASE WHEN CaseId = ? AND DateTimeStart >= ? AND DateTimeEnd <= ? THEN 1 ELSE 0 END) FROM Events");
+                        pst.setInt(1, case_id);
+                        pst.setTimestamp(2, new java.sql.Timestamp(sheetStart.getTime()));
+                        pst.setTimestamp(3, new java.sql.Timestamp(sheetEnd.getTime()));
+                        rs = pst.executeQuery();
+                        
+                        int numRelEvents = 0;
+                        
+                        while (rs.next()) {
+                            numRelEvents = rs.getInt(1);
+                        }
+                        //System.out.println("Events: " + numRelEvents);
+                        
+                        pst = con.prepareStatement("SELECT DateTimeStart, DateTimeEnd, Category, Description FROM Events WHERE CaseId = ? AND DateTimeStart > ? AND DateTimeEnd < ? ORDER BY DateTimeStart ASC");
+                        pst.setInt(1, case_id);
+                        pst.setTimestamp(2, new java.sql.Timestamp(sheetStart.getTime()));
+                        pst.setTimestamp(3, new java.sql.Timestamp(sheetEnd.getTime()));
+                        rs = pst.executeQuery();
+                        List<Date> starts = new ArrayList<Date>();
+                        List<Date> ends = new ArrayList<Date>();
+                        List<String> cats = new ArrayList<String>();
+                        List<String> descs = new ArrayList<String>();
+                        
+                        for (int i=0; i<numRelEvents; i++) {
+                            rs.next();
+                            starts.add(rs.getTimestamp(1));
+                            //System.out.print("End Times: " + rs.getTimestamp(2));
+                            ends.add(rs.getTimestamp(2));
+                            cats.add(rs.getString(3));
+                            descs.add(rs.getString(4));
+                        }
+                        SheetUI sheetUI = new SheetUI(main, "Case SpreadSheet", starts, ends, cats, descs);
+                    }
+                } catch (SQLException ex) {
+                    Logger lgr = Logger.getLogger(Prepared.class.getName());
+                    lgr.log(Level.SEVERE, ex.getMessage(), ex);
+
+                } finally {
+
+                    try {
+                        if (pst != null) {
+                            pst.close();
+                        }
+                        if (con != null) {
+                            con.close();
+                        }
+
+                    } catch (SQLException ex) {
+                        Logger lgr = Logger.getLogger(Prepared.class.getName());
+                        lgr.log(Level.SEVERE, ex.getMessage(), ex);
+                    }
                 }
             }
         });
