@@ -48,6 +48,7 @@ public class BillTrackUI extends JFrame {
     //private static List<JButton> secondTopCases = new ArrayList<JButton>();
     private static JLabel caseLabel = new JLabel("Other Case: ");
     private static JComboBox<String> caseGuess = new JComboBox<String>();
+    private static JButton caseSelect = new JButton("Select Case");
     
     private JMenuBar menuBar;
     private JMenu fileMenu;        
@@ -67,6 +68,8 @@ public class BillTrackUI extends JFrame {
     private static String user;
     private static String password;
     private static int numTopCases;
+    private static int numNotTopCases;
+    private static Tuple[] notTopCases;
     
     public BillTrackUI() {
         setupGUI();
@@ -87,12 +90,18 @@ public class BillTrackUI extends JFrame {
         user = "kerrynic";
         password = "thomas51";
         
-        String[] notTopCases = guesses();
-        caseGuess = new JComboBox<String>(notTopCases);
-        AutoCompleteDecorator.decorate(caseGuess);
+        notTopCases = guesses();
+        String[] butts = new String[numNotTopCases];
+        for (int i=0; i<numNotTopCases; i++) {
+            butts[i] = notTopCases[i].x;
+        }
+        caseGuess = new JComboBox<String>(butts);
+        //AutoCompleteDecorator.decorate(caseGuess);
         caseGuess.setMaximumSize(new Dimension(200,30));
         caseLabel.setFont(new Font("Arial", Font.PLAIN, 25));
         caseGuess.setFont(new Font("Arial", Font.PLAIN, 20));
+        caseSelect.setFont(new Font("Arial", Font.PLAIN, 20));
+        addActionListenerToCaseButton(notTopCases);
         //rowNumSecondTop = 2;
         //int placeTop = 0;
         //int placeSec = 0;
@@ -291,11 +300,13 @@ public class BillTrackUI extends JFrame {
                 bottomLayout.createSequentialGroup()
                     .addComponent(caseLabel)
                     .addComponent(caseGuess)
+                    .addComponent(caseSelect)
         );
         bottomLayout.setVerticalGroup(
                 bottomLayout.createParallelGroup(Alignment.CENTER)
                     .addComponent(caseLabel)
                     .addComponent(caseGuess)
+                    .addComponent(caseSelect)
         );
         
         //Menu Items
@@ -369,7 +380,7 @@ public class BillTrackUI extends JFrame {
                 newCase.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         newCase.setBackground(Color.red);
-                        TimingUI timingUI = new TimingUI(main, "Working");
+                        TimingUI timingUI = new TimingUI(main, "Working on " + lastname + ", " + firstname);
                         //System.out.println("Start Time: " + currentStartTime);
                         //System.out.println("Length of Time: " + currentEventTime[2] + " " + currentEventTime[1] + " " + currentEventTime[0]);
                         if (!timingUI.getCancelFlag()) {
@@ -450,23 +461,50 @@ public class BillTrackUI extends JFrame {
         }
     }
     
-    public String[] guesses() {
-        String[] cases = null;
+    public void addActionListenerToCaseButton(Tuple[] nottopCases) {
+        caseSelect.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String lastFirst = (String) caseGuess.getSelectedItem();
+                String[] lastSplitFirst= lastFirst.split(", ");
+                TimingUI timingUI = new TimingUI(main, "Working on " + lastFirst);
+                int caseid = numNotTopCases+numTopCases+1;
+                for (int i = 0; i<numNotTopCases; i++) {
+                    if (nottopCases[i].x == lastFirst){
+                        caseid = nottopCases[i].y;
+                    }  
+                }
+                //System.out.println("Start Time: " + currentStartTime);
+                //System.out.println("Length of Time: " + currentEventTime[2] + " " + currentEventTime[1] + " " + currentEventTime[0]);
+                if (!timingUI.getCancelFlag()) {
+                    currentEventTime = timingUI.getTime();
+                    currentStartTime = timingUI.getStartTime();
+                    //System.out.println(currentStartTime);
+                    InputUI inputUI = new InputUI(main, "Input Case Event", lastSplitFirst[0], lastSplitFirst[1], currentEventTime);
+                    if (!inputUI.getCancelFlag()) {
+                        makeDatabaseEntry(caseid, currentStartTime, currentEventTime, inputUI.getCategoryResponse(), inputUI.getDescriptionResponse());
+                    }
+                }
+            }
+        });
+    }
+    
+    public Tuple[] guesses() {
+        Tuple[] cases = null;
         try {
             con = DriverManager.getConnection(url, user, password);
             pst = con.prepareStatement("SELECT SUM(CASE WHEN Location=2 THEN 1 ELSE 0 END) FROM Cases");
             rs = pst.executeQuery();
-            numTopCases = 0;
+            numNotTopCases = 0;
             
             while (rs.next()) {
-                numTopCases = rs.getInt(1);
+                numNotTopCases = rs.getInt(1);
             }
-            pst = con.prepareStatement("SELECT LastName, FirstName FROM Cases WHERE Location=2");
+            pst = con.prepareStatement("SELECT LastName, FirstName, Id FROM Cases WHERE Location=2");
             rs = pst.executeQuery();
-            cases = new String[numTopCases];
-            for (int i =0; i<numTopCases; i++) {
+            cases = new Tuple[numNotTopCases];
+            for (int i =0; i<numNotTopCases; i++) {
                 rs.next();
-                cases[i] = rs.getString(1) + ", " + rs.getString(2);
+                cases[i] = new Tuple(rs.getString(1) + ", " + rs.getString(2), rs.getInt(3));
             }
 
         } catch (SQLException ex) {
@@ -491,6 +529,14 @@ public class BillTrackUI extends JFrame {
         return cases;
     }
     
+    public class Tuple { 
+        public final String x; 
+        public final int y; 
+        public Tuple(String x, Integer y) { 
+          this.x = x; 
+          this.y = y; 
+        } 
+      }
     
     public static void main(final String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
