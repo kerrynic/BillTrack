@@ -51,6 +51,10 @@ public class BillTrackUI extends JFrame {
     private static JButton caseSelect = new JButton("Select Case");
     private static Tuple[] caseNamesAndIDs;
     
+    private static String sheetCase;
+    private static Date sheetStart;
+    private static Date sheetEnd;
+    
     private JMenuBar menuBar;
     private JMenu fileMenu;        
     private JMenu viewMenu;
@@ -491,6 +495,7 @@ public class BillTrackUI extends JFrame {
             }
         });
     }
+    //
     
     public void addActionListenerToViewSheetMenu() {
         viewSheet.addActionListener(new ActionListener() {
@@ -500,18 +505,11 @@ public class BillTrackUI extends JFrame {
                     blahs[i] = caseNamesAndIDs[i].x;
                 }
                 SheetSelectorUI sheetSelectorUI = new SheetSelectorUI(main, "Spreadsheet Selection", blahs);
-                //int caseid = numNotTopCases+numTopCases+1;
-                //for (int i = 0; i<numNotTopCases; i++) {
-                //    if (nottopCases[i].x == lastFirst){
-                //        caseid = nottopCases[i].y;
-                //    }  
-                //}
-                //System.out.println("Start Time: " + currentStartTime);
-                //System.out.println("Length of Time: " + currentEventTime[2] + " " + currentEventTime[1] + " " + currentEventTime[0]);
                 if (!sheetSelectorUI.getCancelFlag()) {
-                    System.out.println("Case : " + sheetSelectorUI.getCaseResponse());
-                    System.out.println("Start Date : " + sheetSelectorUI.getFirstDate());
-                    System.out.println("End Date : " + sheetSelectorUI.getLastDate());
+                    sheetCase = sheetSelectorUI.getCaseResponse();
+                    sheetStart = sheetSelectorUI.getFirstDate();
+                    sheetEnd = sheetSelectorUI.getFirstDate();
+                    
                     //System.out.println(currentStartTime);
                     //InputUI inputUI = new InputUI(main, "Input Case Event", lastSplitFirst[0], lastSplitFirst[1], currentEventTime);
                     //if (!inputUI.getCancelFlag()) {
