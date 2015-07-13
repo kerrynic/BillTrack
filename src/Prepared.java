@@ -23,14 +23,12 @@ public class Prepared {
 
             con = DriverManager.getConnection(url, user, password);
             //pst = con.prepareStatement("SELECT SUM(CASE WHEN Location=1 THEN 1 ELSE 0 END) FROM Cases");
-            pst = con.prepareStatement("SELECT LastName, FirstName FROM Cases WHERE Location=1");
+            pst = con.prepareStatement("SELECT SUM(CASE) FROM Cases");
             //pst = con.prepareStatement("SELECT Id, Name FROM Authors WHERE Id=1;");
             rs = pst.executeQuery();
             
             while (rs.next()) {
                 System.out.print(rs.getString(1));
-                System.out.print(": ");
-                System.out.println(rs.getString(2));
             }
             
         } catch (SQLException ex) {

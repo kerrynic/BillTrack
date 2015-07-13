@@ -49,6 +49,7 @@ public class BillTrackUI extends JFrame {
     private static JLabel caseLabel = new JLabel("Other Case: ");
     private static JComboBox<String> caseGuess = new JComboBox<String>();
     private static JButton caseSelect = new JButton("Select Case");
+    private static Tuple[] caseNamesAndIDs;
     
     private JMenuBar menuBar;
     private JMenu fileMenu;        
@@ -70,6 +71,7 @@ public class BillTrackUI extends JFrame {
     private static int numTopCases;
     private static int numNotTopCases;
     private static Tuple[] notTopCases;
+    private static int numAllCases;
     
     public BillTrackUI() {
         setupGUI();
@@ -90,6 +92,7 @@ public class BillTrackUI extends JFrame {
         user = "kerrynic";
         password = "thomas51";
         
+        caseNamesAndIDs = getAllCases();
         notTopCases = guesses();
         String[] butts = new String[numNotTopCases];
         for (int i=0; i<numNotTopCases; i++) {
@@ -328,7 +331,8 @@ public class BillTrackUI extends JFrame {
         changeTopCases = new JMenuItem("Change Top Cases"); 
         addRowEvent = new JMenuItem("Add Row"); 
         
-        viewSheet = new JMenuItem("View Sheet");     
+        viewSheet = new JMenuItem("View Sheet");
+        addActionListenerToViewSheetMenu();
         viewBill = new JMenuItem("View Bill"); 
 
         menuBar.add(fileMenu);
@@ -488,6 +492,77 @@ public class BillTrackUI extends JFrame {
         });
     }
     
+    public void addActionListenerToViewSheetMenu() {
+        viewSheet.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String[] blahs = new String[numAllCases];
+                for (int i=0; i<numAllCases; i++) {
+                    blahs[i] = caseNamesAndIDs[i].x;
+                }
+                SheetSelectorUI sheetSelectorUI = new SheetSelectorUI(main, "Spreadsheet Selection", blahs);
+                //int caseid = numNotTopCases+numTopCases+1;
+                //for (int i = 0; i<numNotTopCases; i++) {
+                //    if (nottopCases[i].x == lastFirst){
+                //        caseid = nottopCases[i].y;
+                //    }  
+                //}
+                //System.out.println("Start Time: " + currentStartTime);
+                //System.out.println("Length of Time: " + currentEventTime[2] + " " + currentEventTime[1] + " " + currentEventTime[0]);
+                if (!sheetSelectorUI.getCancelFlag()) {
+                    System.out.println("Case : " + sheetSelectorUI.getCaseResponse());
+                    System.out.println("Start Date : " + sheetSelectorUI.getFirstDate());
+                    System.out.println("End Date : " + sheetSelectorUI.getLastDate());
+                    //System.out.println(currentStartTime);
+                    //InputUI inputUI = new InputUI(main, "Input Case Event", lastSplitFirst[0], lastSplitFirst[1], currentEventTime);
+                    //if (!inputUI.getCancelFlag()) {
+                    //    makeDatabaseEntry(caseid, currentStartTime, currentEventTime, inputUI.getCategoryResponse(), inputUI.getDescriptionResponse());
+                    //}
+                }
+            }
+        });
+    }
+    
+    public Tuple[] getAllCases() {
+        Tuple[] cases = null;
+        try {
+            con = DriverManager.getConnection(url, user, password);
+            pst = con.prepareStatement("SELECT COUNT(*) FROM Cases");
+            rs = pst.executeQuery();
+            numAllCases = 0;
+            
+            while (rs.next()) {
+                numAllCases = rs.getInt(1);
+            }
+            pst = con.prepareStatement("SELECT LastName, FirstName, Id FROM Cases");
+            rs = pst.executeQuery();
+            cases = new Tuple[numAllCases];
+            for (int i =0; i<numAllCases; i++) {
+                rs.next();
+                cases[i] = new Tuple(rs.getString(1) + ", " + rs.getString(2), rs.getInt(3));
+            }
+
+        } catch (SQLException ex) {
+            Logger lgr = Logger.getLogger(Prepared.class.getName());
+            lgr.log(Level.SEVERE, ex.getMessage(), ex);
+
+        } finally {
+
+            try {
+                if (pst != null) {
+                    pst.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+
+            } catch (SQLException ex) {
+                Logger lgr = Logger.getLogger(Prepared.class.getName());
+                lgr.log(Level.SEVERE, ex.getMessage(), ex);
+            }
+        }
+        return cases;
+    }
+    
     public Tuple[] guesses() {
         Tuple[] cases = null;
         try {
@@ -536,7 +611,7 @@ public class BillTrackUI extends JFrame {
           this.x = x; 
           this.y = y; 
         } 
-      }
+    }
     
     public static void main(final String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
