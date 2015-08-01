@@ -3,9 +3,12 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
@@ -77,6 +81,8 @@ public class BillTrackUI extends JFrame {
     private static int numNotTopCases;
     private static Tuple[] notTopCases;
     private static int numAllCases;
+    private static Image background;
+    private static Color patternColor;
     
     public BillTrackUI() {
         setupGUI();
@@ -97,6 +103,12 @@ public class BillTrackUI extends JFrame {
         user = "kerrynic";
         password = "thomas51";
         
+        try {
+            background = ImageIO.read(new File("background2.jpg"));
+            
+        } catch (IOException e) {
+        }
+        patternColor = new Color(239,232,204);
         caseNamesAndIDs = getAllCases();
         notTopCases = guesses();
         String[] butts = new String[numNotTopCases];
@@ -143,35 +155,60 @@ public class BillTrackUI extends JFrame {
         //Create the GroupLayout of the game
         //It's broken into three different panes that are staked vertically
         //They all sit on the main pane
-        Container mainPane = getContentPane();
+        Container main = getContentPane();
+        Container mainPane = new TexturedPanel(background);
         GroupLayout mainLayout = new GroupLayout(mainPane);
         mainPane.setLayout(mainLayout);
+        main.add(mainPane);
         
         //The 3 sub-panels
-        Container topPane = new Panel();
+        //System.out.println(background);
+        Container borderPane = new Panel();
+        borderPane.setBackground(patternColor);
+        GroupLayout borderLayout = new GroupLayout(borderPane);
+        borderPane.setLayout(borderLayout);
+        Container topPane = new TexturedPanel(background);
+        //topPane.setBackground(patternColor);
         GroupLayout topLayout = new GroupLayout(topPane);
         topPane.setLayout(topLayout);
         //Container middlePane = new Panel();
         //GroupLayout middleLayout = new GroupLayout(middlePane);
        // middlePane.setLayout(middleLayout);
         Container bottomPane = new Panel();
+        bottomPane.setBackground(patternColor);
         GroupLayout bottomLayout = new GroupLayout(bottomPane);
         bottomPane.setLayout(bottomLayout);
         
         //The Grouplayout of how the 3 subpanels relate to each other
         mainLayout.setHorizontalGroup(
                 mainLayout.createParallelGroup(Alignment.CENTER)
+                    .addComponent(borderPane)
                     .addComponent(topPane)
                     .addComponent(bottomPane)
         );
         mainLayout.setVerticalGroup(
                 mainLayout.createSequentialGroup()
+                    .addComponent(borderPane)
                     .addComponent(topPane)
                     .addComponent(bottomPane)
+        );
+        JLabel welcome = new JLabel("Welcome, Margaret!");
+        welcome.setFont(new Font("Arial", Font.BOLD, 50));
+        
+        borderLayout.setAutoCreateGaps(true);
+        borderLayout.setAutoCreateContainerGaps(true);
+        borderLayout.setHorizontalGroup(
+                borderLayout.createSequentialGroup()
+                    .addComponent(welcome)
+        );
+        borderLayout.setVerticalGroup(
+                borderLayout.createParallelGroup(Alignment.CENTER)
+                    .addComponent(welcome)
         );
         
         //The grouplayout of the top line with the new puzzle components
         Container topTopPane = new Panel();
+        //topTopPane.setBackground(patternColor);
         GroupLayout topTopLayout = new GroupLayout(topTopPane);
         topTopPane.setLayout(topTopLayout);
         Container topBottomPane = new Panel();
@@ -200,8 +237,8 @@ public class BillTrackUI extends JFrame {
                     .addComponent(middleTopPane)
                     .addComponent(middleBottomPane)
         );
-        topTopLayout.setAutoCreateGaps(true);
-        topTopLayout.setAutoCreateContainerGaps(true);
+        //topTopLayout.setAutoCreateGaps(true);
+        //topTopLayout.setAutoCreateContainerGaps(true);
         topTopLayout.setHorizontalGroup(
                 topTopLayout.createSequentialGroup()
                     .addComponent(topCases.get(0))
@@ -211,15 +248,15 @@ public class BillTrackUI extends JFrame {
                     .addComponent(topCases.get(4))
         );
         topTopLayout.setVerticalGroup(
-                topTopLayout.createParallelGroup(Alignment.BASELINE)
+                topTopLayout.createParallelGroup(Alignment.CENTER)
                     .addComponent(topCases.get(0))
                     .addComponent(topCases.get(1))
                     .addComponent(topCases.get(2))
                     .addComponent(topCases.get(3))
                     .addComponent(topCases.get(4))
         );
-        topBottomLayout.setAutoCreateGaps(true);
-        topBottomLayout.setAutoCreateContainerGaps(true);
+        //topBottomLayout.setAutoCreateGaps(true);
+        //topBottomLayout.setAutoCreateContainerGaps(true);
         topBottomLayout.setHorizontalGroup(
                 topBottomLayout.createSequentialGroup()
                     .addComponent(topCases.get(5))
@@ -236,8 +273,8 @@ public class BillTrackUI extends JFrame {
                     .addComponent(topCases.get(8))
                     .addComponent(topCases.get(9))
         );
-        middleTopLayout.setAutoCreateGaps(true);
-        middleTopLayout.setAutoCreateContainerGaps(true);
+        //middleTopLayout.setAutoCreateGaps(true);
+        //middleTopLayout.setAutoCreateContainerGaps(true);
         middleTopLayout.setHorizontalGroup(
                 middleTopLayout.createSequentialGroup()
                     .addComponent(topCases.get(10))
@@ -254,8 +291,8 @@ public class BillTrackUI extends JFrame {
                     .addComponent(topCases.get(13))
                     .addComponent(topCases.get(14))
         );
-        middleBottomLayout.setAutoCreateGaps(true);
-        middleBottomLayout.setAutoCreateContainerGaps(true);
+        //middleBottomLayout.setAutoCreateGaps(true);
+        //middleBottomLayout.setAutoCreateContainerGaps(true);
         middleBottomLayout.setHorizontalGroup(
                 middleBottomLayout.createSequentialGroup()
                     .addComponent(topCases.get(15))
@@ -301,6 +338,7 @@ public class BillTrackUI extends JFrame {
         billingMenu.setFont(new Font("Arial", Font.BOLD, 15));
         
         addEvent = new JMenuItem("Add Event");
+        addActionListenerToAddEventMenu(notTopCases);
         removeEvent = new JMenuItem("Remove Event"); 
         exitAction = new JMenuItem("Exit"); 
 
@@ -469,6 +507,34 @@ public class BillTrackUI extends JFrame {
             }
         });
     }
+    
+    public void addActionListenerToAddEventMenu(Tuple[] nottopCases) {
+        addEvent.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String[] blahs = new String[numAllCases];
+                for (int i=0; i<numAllCases; i++) {
+                    blahs[i] = caseNamesAndIDs[i].x;
+                }
+                //System.out.println(currentStartTime);
+                AddEventUI addEventUI = new AddEventUI(main, "Input Case Event", blahs);
+                if (!addEventUI.getCancelFlag()) {
+                    String caseName = addEventUI.getCaseResponse();
+                    int caseid = numAllCases+1;
+                    for (int i = 0; i<numAllCases; i++) {
+                        if (caseNamesAndIDs[i].x == caseName){
+                            caseid = caseNamesAndIDs[i].y;
+                        }  
+                    }
+                    currentEventTime = addEventUI.getTimeDuration();
+                    currentStartTime = addEventUI.getStartTimeDate();
+                    String catRes = addEventUI.getCategoryResponse();
+                    String desRes = addEventUI.getDescriptionResponse();
+                    makeDatabaseEntry(caseid, currentStartTime, currentEventTime, catRes, desRes);
+                }
+            }
+        });
+    }
+    
     //
     
     public void addActionListenerToViewSheetMenu() {
